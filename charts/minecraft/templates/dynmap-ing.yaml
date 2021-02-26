@@ -2,7 +2,7 @@
 {{- $minecraftFullname := include "minecraft.fullname" . }}
 {{- $serviceName := printf "%s-extraport" $minecraftFullname }}
 {{- $servicePort := .Values.minecraftServer.extraPort.service.port }}
-apiVersion: networking.k8s.io/v1
+apiVersion: {{ include "transmission.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
   name: "{{ $minecraftFullname }}-extraPort"
@@ -32,11 +32,18 @@ spec:
     http:
       paths:
       - path: {{ .path | default "/" }}
+        {{- if eq (include "transmission.ingress.apiVersion" $) "networking.k8s.io/v1" }}
         pathType: Prefix
+        {{- end }}
         backend:
+          {{- if eq (include "transmission.ingress.apiVersion" $) "networking.k8s.io/v1" }}
           service:
             name: {{ $serviceName }}
             port:
               number: {{ $servicePort }}
+          {{- else }}
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+          {{- end }}
   {{- end }}
 {{- end }}
